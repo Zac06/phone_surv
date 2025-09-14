@@ -281,7 +281,7 @@ public class ReceiverThread extends Thread {
 
 		try {
 			if(db!=null) {
-				db.closeConnection();
+				db.close();
 				db=null;
 			}
 		} catch (SQLException e) {

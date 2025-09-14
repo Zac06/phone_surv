@@ -86,7 +86,7 @@ public class IntervalCloserThread extends Thread {
 			
 			db.commit();
 			
-			db.closeConnection();
+			db.close();
 			
 		} catch (SQLException ee) {
 			ee.printStackTrace();
