@@ -1,0 +1,9 @@
+Manifest-Version: 1.0
+MIDlet-Name: IPCamera
+MIDlet-Version: 1.0
+MIDlet-Vendor: Francescato Zaccaria
+MIDlet-1: IPCamera, , MainMIDlet
+MicroEdition-Configuration: CLDC-1.1
+MicroEdition-Profile: MIDP-2.1
+MIDlet-Permissions: javax.microedition.io.Connector.socket
+
