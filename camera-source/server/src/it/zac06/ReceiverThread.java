@@ -68,17 +68,15 @@ public class ReceiverThread extends Thread {
 			int camnameSize=in.readInt();
 			setName(new String(in.readNBytes(camnameSize)));
 			
-			//System.out.println("HAH");
 			System.out.println("["+getName()+"] Just connected");
 			
-			db.query("select id_cam from telecamera where nome='" + getName() + "'");
+			db.preparedQuery("select id_cam from telecamera where nome=?", getName());
 
 			if (db.getLastQueryRowCount() != 1) {
-				db.update("insert into telecamera values (0, '" + getName() + "')");
+				db.preparedUpdate("insert into telecamera (nome) values (?)", getName());
 				db.query("select last_insert_id() as id_cam");
 			}
 
-			// db.query("select * from telecamera where nome='"+getName()+"'");
 			idCam = Integer.parseInt(db.processLastQuery("id_cam")[0]);
 
 		} catch (SQLException | NumberFormatException e) {
@@ -111,7 +109,7 @@ public class ReceiverThread extends Thread {
 			System.out.println("[" + getName() + "] Set the framesPerInterval to " + framesPerInterval + ".");
 
 			while (running) {
-				db.update("insert into intervallo values (0, now(), NULL, " + idCam + ");");
+				db.preparedUpdate("insert into intervallo (inizio, fine, id_cam) values (now(), null, ?)", idCam);
 				db.query("select last_insert_id() as id_int");
 				int idInt = Integer.parseInt(db.processLastQuery("id_int")[0]); // we are pretty much certain that it's
 																					// going to parse into a number,
@@ -151,7 +149,7 @@ public class ReceiverThread extends Thread {
 					}
 
 					try {
-						db.update("insert into foto values (0, '" + picName + "', " + idInt + ")");
+						db.preparedUpdate("insert into foto (nomefile_f, id_int) values (?, ?)", picName, idInt);
 					} catch (SQLException e) {
 						e.printStackTrace();
 						System.out.println(
@@ -198,7 +196,7 @@ public class ReceiverThread extends Thread {
 		// close the already existing intervals
 		int rc = -1;
 		try {
-			db.query("select * from intervallo where fine is null and id_cam=" + idCam);
+			db.preparedQuery("select * from intervallo where fine is null and id_cam=?", idCam);
 			rc = db.getLastQueryRowCount();
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -216,7 +214,6 @@ public class ReceiverThread extends Thread {
 				IntervalCloserThread[] icts = new IntervalCloserThread[existingIntervals.length];
 
 				for (int i = 0; i < existingIntervals.length; i++) {
-					// AAAAAAAAAAAAAAAAAAa
 					icts[i] = new IntervalCloserThread(dbpar, existingIntervals[i]);
 					icts[i].start();
 

@@ -18,7 +18,7 @@ create table intervallo (
 
     check(fine>=inizio),
 
-    constraint fk_int_cam foreign key (id_cam) references telecamera(id_cam)
+    constraint fk_int_cam foreign key (id_cam) references telecamera(id_cam) on update cascade on delete cascade
 );
 
 create table foto (
@@ -26,7 +26,7 @@ create table foto (
     nomefile_f  varchar(512)    not null,
     id_int      int             not null,
 
-    constraint fk_foto_int foreign key (id_int) references intervallo(id_int)
+    constraint fk_foto_int foreign key (id_int) references intervallo(id_int)  on update cascade on delete cascade
 );
 
 create table video (
@@ -34,5 +34,5 @@ create table video (
     nomefile_v  varchar(512)    not null,
     id_int      int             not null,
 
-    constraint fk_vid_int foreign key (id_int) references intervallo(id_int)
+    constraint fk_vid_int foreign key (id_int) references intervallo(id_int)  on update cascade on delete cascade
 );

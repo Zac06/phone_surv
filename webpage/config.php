@@ -4,7 +4,7 @@ function loadDbConfig(): array {
     static $config = null;
 
     if ($config === null) {
-        $config = parse_ini_file('/home/zaccaria/eclipse-workspace/IPCameraReceiver/.properties');
+        $config = parse_ini_file('../.properties');
         if ($config === false) {
             throw new RuntimeException('Unable to load DB properties file');
         }
@@ -13,7 +13,6 @@ function loadDbConfig(): array {
     return $config;
 }
 
-// small helpers:
 function getDbHost(): string {
     $cfg = loadDbConfig();
     return $cfg['dbHost'];

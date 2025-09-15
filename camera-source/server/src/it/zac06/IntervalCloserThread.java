@@ -29,7 +29,7 @@ public class IntervalCloserThread extends Thread {
         	//create the file comtaining all the filenames
         	BufferedWriter fout=new BufferedWriter(new FileWriter(ParameterLoader.getDataPath()+"/"+textFilename));
         	
-        	db.query("select * from foto where id_int="+getName()+" order by nomefile_f");
+			db.preparedQuery("select nomefile_f from foto where id_int=? order by nomefile_f", getName());
         	String[] photos=db.processLastQuery("nomefile_f");
         	for(int i=0; i<photos.length; i++) {
         		fout.write("file '"+photos[i]+"'\n");
@@ -70,14 +70,14 @@ public class IntervalCloserThread extends Thread {
 			
 			db.startTransaction();
 			
-			db.update("insert into video values (0, '"+videoFilename+"', "+getName()+")");
-			db.update("update intervallo set fine=now() where id_int="+getName());
+			db.preparedUpdate("insert into video (nomefile_v, id_int) values (?, ?)", videoFilename, getName());
+			db.preparedUpdate("update intervallo set fine=now() where id_int=?", getName());
 			
 			//cleaning up the files/remnants
 			File fdel=new File(ParameterLoader.getDataPath()+"/"+textFilename);
 			fdel.delete();
 			
-			db.update("delete from foto where id_int="+getName());
+			db.preparedUpdate("delete from foto where id_int=?", getName());
 			
 			for(int i=0; i<photos.length; i++) {
         		File photo_del=new File(ParameterLoader.getDataPath()+"/"+photos[i]);
