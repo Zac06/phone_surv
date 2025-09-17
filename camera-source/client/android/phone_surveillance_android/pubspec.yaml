@@ -26,6 +26,7 @@ dev_dependencies:
 
   camera: ^0.11.2
   image: ^4.5.4
+  wakelock_plus: ^1.4.0
 
 flutter:
 

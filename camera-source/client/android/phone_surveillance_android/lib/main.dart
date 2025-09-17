@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:image/image.dart' as img;
+import 'package:wakelock_plus/wakelock_plus.dart';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -243,6 +244,8 @@ class _CameraParametersState extends State<CameraParameters> {
         const SnackBar(content: Text('Could not stop streaming.')),
       );
     }
+
+    WakelockPlus.disable();
   }
 
   void _toggleStreaming() async {
@@ -251,6 +254,8 @@ class _CameraParametersState extends State<CameraParameters> {
       await _stopCamera();
       return;
     }
+
+    WakelockPlus.enable();
 
     if (_formKey.currentState!.validate()) {
       CameraDescription? selectedCamera =
