@@ -38,4 +38,13 @@ function getDataPath(): string{
     return $cfg['basePath'].'/'.$cfg['dataPath'].'/';
 }
 
+function getLang() : string{
+    $cfg = loadDbConfig();
+    if(!isset($cfg['lang'])){
+        return 'en';
+    }
+    
+    return $cfg['lang'];
+}
+
 ?>

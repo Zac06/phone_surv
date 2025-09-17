@@ -1,18 +1,24 @@
+<?php
+require 'config.php';
+
+$lang = getLang();
+
+$dic = include __DIR__ . "/lang/$lang.php";
+?>
+
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?php echo $lang ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="style.css">
     <link rel="shortcut icon" href="res/favicon.ico" type="image/x-icon">
-    <title>Phone surveillance system</title>
+    <title><?php echo $dic['Sistema di sorveglianza via telefono'] ?></title>
 </head>
 <body>
     <?php
-        require 'config.php';
-
         if(!isset($_GET['nome'])||$_GET['nome']==''){
-            echo "<h2>Per favore, dare come parametro il nome di una telecamera.</h2>";
+            echo "<h2>".$dic['Per favore, dare come parametro il nome di una telecamera']."</h2>";
             die();
         }else{
             $nome_cam=$_GET['nome'];
@@ -31,13 +37,13 @@
 
         ?>
         
-        <h2>Seleziona un video registrato da visualizzare</h2>
+        <h2><?php echo $dic['Seleziona un video registrato da visualizzare']?></h2>
 
         <table>
             <tr>
-                <th>Inizio video</th>
-                <th>Fine del video</th>
-                <th>Vai al video</th>
+                <th><?php echo $dic['Inizio video'] ?></th>
+                <th><?php echo $dic['Fine del video'] ?></th>
+                <th><?php echo $dic['Vai al video'] ?></th>
             </tr>
 
             <?php
@@ -48,14 +54,14 @@
                 $result = $stmt->get_result();
                 
                 if($result->num_rows==0){
-                    echo "<tr><td colspan=\"3\">Nessun video ancora registrato da questa telecamera</td></tr>";
+                    echo "<tr><td colspan=\"3\">".$dic['Nessun video ancora registrato da questa telecamera']."</td></tr>";
                 }
 
                 while($row=$result->fetch_assoc()) {
                     echo "<tr>";
                     echo "<td>".htmlspecialchars($row["inizio"])."</td>";
                     echo "<td>".htmlspecialchars($row["fine"])."</td>";
-                    echo "<td><a target='_blank' href=watch.php?nomefile_v=".htmlspecialchars($row["nomefile_v"]).">Vai al video</a></td>";
+                    echo "<td><a target='_blank' href=watch.php?nomefile_v=".htmlspecialchars($row["nomefile_v"]).">".$dic['Vai al video']."</a></td>";
                     echo "</tr>";
                 }
 
@@ -68,7 +74,7 @@
 
             $mysqli->close();
         } catch (Exception $e) {
-            echo $e->getMessage();
+            echo htmlspecialchars($e->getMessage());
         }
 
     ?>

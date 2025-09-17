@@ -1,29 +1,37 @@
+<?php
+require 'config.php';
+
+$lang = getLang();
+
+$dic = include __DIR__ . "/lang/$lang.php";
+?>
+
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?php echo $lang ?>">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="style.css">
     <link rel="shortcut icon" href="res/favicon.ico" type="image/x-icon">
-    <title>Guarda live</title>
+    <title><?php echo $dic['Guarda live'] ?></title>
 </head>
 
 <body>
     <?php
     if (!isset($_GET['nome'])) {
-        echo "<h2>Per favore fornire il nome della camera da guardare in diretta.</h2>";
+        echo "<h2>".$dic['Per favore fornire il nome della camera da guardare in diretta.']."</h2>";
         die();
     }
 
     $cam = htmlspecialchars($_GET['nome'], ENT_QUOTES);
     ?>
 
-    <h1>Stai guardando la telecamera <?php echo $cam; ?></h1>
+    <h1><?php echo $dic['Stai guardando la telecamera'] ?> <?php echo $cam; ?></h1>
 
     <img id="live_image" alt="Stream live" style="max-width:100%; border:1px solid #cccccc;">
 
-    <div id="status">Connessione non aperta</div>
+    <div id="status"><?php echo $dic['Connessione non aperta'] ?></div>
 
     <script>
         const cameraName = <?php echo json_encode($cam); ?>;
@@ -50,11 +58,11 @@
         };
 
         ws.onclose = (event) => {
-            document.getElementById('status').innerHTML='Connessione terminata.'+(event.reason==='' ? '' : ' Motivo: '+event.reason);
+            document.getElementById('status').innerHTML='<?php echo $dic['Connessione terminata']?>.'+(event.reason==='' ? '' : ' <?php echo $dic['Motivo']?>: '+event.reason);
             
             img.src='';
         };
-        ws.onerror = (err) => console.error("Errore di connessione", err);
+        ws.onerror = (err) => console.error("<?php echo $dic['Errore di connessione'] ?>", err);
     </script>
 </body>
 
