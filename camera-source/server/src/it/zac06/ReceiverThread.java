@@ -179,6 +179,14 @@ public class ReceiverThread extends Thread {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+
+		while (!closerThreads.isEmpty()) {
+			try {
+				closerThreads.remove().join(60000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			} 
+		}
 		
 		closeAlreadyExistingIntervals(idCam);
 		closeThings();

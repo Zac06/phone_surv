@@ -16,6 +16,19 @@ public class ServerReceiver {
 	
     public static void main(String[] args) throws IOException, ClassNotFoundException, SQLException, IllegalPropertyDataException {
     	ParameterLoader.load(".properties");
+
+        File directory = new File(ParameterLoader.getDataPath());
+        if (!directory.exists()) {
+            boolean created = directory.mkdirs(); // creates parent dirs if needed
+            if (created) {
+                System.out.println("[ServerReceiver] Data directory created: " + ParameterLoader.getDataPath());
+            } else {
+                System.out.println("[ServerReceiver] Failed to create data directory.");
+                return;
+            }
+        } else {
+            System.out.println("[ServerReceiver] Data directory already exists.");
+        }
     	
         server=new ServerSocket(ParameterLoader.getCameraServerPort());
         dbpar=new DBParams();
