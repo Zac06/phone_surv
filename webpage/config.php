@@ -4,7 +4,7 @@ function loadDbConfig(): array {
     static $config = null;
 
     if ($config === null) {
-        $config = parse_ini_file('../.properties');
+        $config = parse_ini_file('.properties');
         if ($config === false) {
             throw new RuntimeException('Unable to load DB properties file');
         }

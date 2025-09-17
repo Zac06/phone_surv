@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="style.css">
     <link rel="shortcut icon" href="res/favicon.ico" type="image/x-icon">
-    <title>Phone surveillance system</title>
+    <title>Sistema di sorveglianza via telefono</title>
 </head>
 <body>
     <h1>Sorveglianza con telefono</h1>
@@ -15,6 +15,7 @@
         
         try {
             $mysqli=new mysqli(getDbHost(),getDbUsername(),getDbPass(),getDbName());
+            $mysqli->set_charset('utf8mb4');
             if($mysqli->connect_errno) {
                 throw new Exception("Error connecting to database: ".$mysqli->connect_error);
             }
@@ -38,9 +39,9 @@
 
                 while($row=$result->fetch_assoc()) {
                     echo "<tr>";
-                    echo "<td>".$row["nome"]."</td>";
-                    echo "<td><a href=\"camera.php?nome=".$row["nome"]."\">Vai</a></td>";
-                    echo "<td><a href=\"live.php?nome=".$row["nome"]."\">Vai</a></td>";
+                    echo "<td>".htmlspecialchars($row["nome"])."</td>";
+                    echo "<td><a href=\"camera.php?nome=".htmlspecialchars($row["nome"])."\">Vai</a></td>";
+                    echo "<td><a href=\"live.php?nome=".htmlspecialchars($row["nome"])."\">Vai</a></td>";
                     echo "</tr>";
                 }
             ?>

@@ -19,11 +19,12 @@
         }
     ?>
 
-    <h1><?php if(isset($_GET["nome"])) echo $_GET["nome"];?></h1>
+    <h1><?php if(isset($_GET["nome"])) echo htmlspecialchars($_GET["nome"]);?></h1>
 
     <?php
         try {
             $mysqli=new mysqli(getDbHost(),getDbUsername(),getDbPass(),getDbName());
+            $mysqli->set_charset('utf8mb4');
             if($mysqli->connect_errno) {
                 throw new Exception("Error connecting to database: ".$mysqli->connect_error);
             }
@@ -40,18 +41,25 @@
             </tr>
 
             <?php
-                $result=$mysqli->query("select inizio, fine, nomefile_v from intervallo join telecamera using(id_cam) join video using(id_int) where nome='$nome_cam' and fine is not null");
+                //$result=$mysqli->query("select inizio, fine, nomefile_v from intervallo join telecamera using(id_cam) join video using(id_int) where nome='$nome_cam' and fine is not null");
+                $stmt = $mysqli->prepare("select inizio, fine, nomefile_v from intervallo join telecamera USING(id_cam) join video using(id_int) where nome=? and fine is not null");
+                $stmt->bind_param("s", $nome_cam);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                
                 if($result->num_rows==0){
                     echo "<tr><td colspan=\"3\">Nessun video ancora registrato da questa telecamera</td></tr>";
                 }
 
                 while($row=$result->fetch_assoc()) {
                     echo "<tr>";
-                    echo "<td>".$row["inizio"]."</td>";
-                    echo "<td>".$row["fine"]."</td>";
-                    echo "<td><a target='_blank' href=watch.php?nomefile_v=".$row["nomefile_v"].">Vai al video</a></td>";
+                    echo "<td>".htmlspecialchars($row["inizio"])."</td>";
+                    echo "<td>".htmlspecialchars($row["fine"])."</td>";
+                    echo "<td><a target='_blank' href=watch.php?nomefile_v=".htmlspecialchars($row["nomefile_v"]).">Vai al video</a></td>";
                     echo "</tr>";
                 }
+
+                $stmt->close();
             ?>
 
         </table>
