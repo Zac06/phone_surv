@@ -66,6 +66,12 @@ public class ReceiverThread extends Thread {
 
 		try {
 			int camnameSize=in.readInt();
+			if(camnameSize<0||camnameSize>255) {
+				System.out.println("["+getName()+"] Invalid camera name size: "+camnameSize);
+				closeThings();
+				//stopThread();
+				return;
+			}
 			setName(new String(in.readNBytes(camnameSize)));
 			
 			System.out.println("["+getName()+"] Just connected");
@@ -121,7 +127,7 @@ public class ReceiverThread extends Thread {
 				while (currentFramecount < framesPerInterval && running) {
 					int size = in.readInt();
 					if (size == -1) {
-						stopThread();
+						//stopThread();
 						break;
 					}
 					System.out.println("[" + getName() + "] Estimated image " + currentFramecount + " of interval "

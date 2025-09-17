@@ -105,7 +105,7 @@ The app should now be installed on your device. If not, make sure that `Develope
 
 - Download the Java server and the Android application from [Releases](https://github.com/Zac06/phone_surv/releases) (or compile them):
     ```bash
-        wget 'https://github.com/Zac06/phone_surv/releases/download/1.0/camera-server-1.0.0-RELEASE.jar'
+    wget 'https://github.com/Zac06/phone_surv/releases/download/1.0/camera-server-1.0.0-RELEASE.jar'
     ```
 - Create a `.properties` file in the same folder:
     ```bash
