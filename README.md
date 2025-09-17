@@ -1,6 +1,13 @@
-# Phone surveillance system
+Phone Surveillance System
 
-This system allows for multiple phones to connect to a server which is bundled in this repository. 
-All of the picture streams coming from the cameras converge into the Java server; the Java server manages the sent pictures with a MySQL database.
-Once a certain pictures-per-video parameter is triggered (a prefixed number of frames initially comunicated by the camera), a 24fps video is generated, and the original pictures are deleted from the storage.
-The system then allows access to the cameras using a web server (for example Apache+PHP) which communicates with the database (to give access to the recorded videos) and the Java server (to provide a live-camera feed).
+This project provides a complete surveillance platform where multiple phones act as cameras and stream their images to a central server.
+
+The bundled Java server receives the incoming image streams and manages them using a MySQL database. Once a predefined pictures-per-video threshold is reached (a set number of frames communicated by each camera), the server automatically compiles the frames into a 24 fps video and removes the original images from storage to save space.
+
+A web server (e.g. Apache + PHP) can be used alongside the Java server to provide two main features:
+
+- Recorded video access — The web server interacts with the MySQL database to serve previously recorded videos.
+
+- Live camera feeds — The web server communicates with the Java server to deliver real-time camera streams.
+
+This architecture makes it easy to integrate multiple phones, handle large amounts of image data, and give users secure access to both live and recorded footage.
