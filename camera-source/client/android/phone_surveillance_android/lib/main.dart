@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:image/image.dart' as img;
 import 'package:wakelock_plus/wakelock_plus.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -110,6 +111,10 @@ class _CameraParametersState extends State<CameraParameters> {
     _serverIp.dispose();
     _serverPort.dispose();
 
+    _controller.dispose().catchError((error) {
+      print('Error disposing camera: $error');
+    });
+
     super.dispose();
   }
 
@@ -117,8 +122,45 @@ class _CameraParametersState extends State<CameraParameters> {
   late CameraController _controller;
 
   Future<void> _initCamera(CameraDescription camera) async {
-    _controller = CameraController(camera, ResolutionPreset.medium);
-    await _controller.initialize();
+    try {
+      _controller = CameraController(
+        camera,
+        ResolutionPreset.medium,
+        enableAudio: false, // Disable audio if not needed
+      );
+
+      await _controller.initialize().catchError((error) {
+        if (error is CameraException) {
+          print('Camera initialization error: $error');
+          throw error;
+        }
+      });
+
+      if (!_controller.value.isInitialized) {
+        throw CameraException(
+          'Initialization failed',
+          'Camera not initialized',
+        );
+      }
+    } catch (e) {
+      print('Camera initialization failed: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> _initCameraWithRetry(
+    CameraDescription camera, {
+    int retries = 3,
+  }) async {
+    for (int i = 0; i < retries; i++) {
+      try {
+        await _initCamera(camera);
+        return; // Success
+      } catch (e) {
+        if (i == retries - 1) rethrow; // Last retry failed
+        await Future.delayed(Duration(milliseconds: 500 * (i + 1)));
+      }
+    }
   }
 
   Future<void> _connect(String ip, int port) async {
@@ -133,7 +175,7 @@ class _CameraParametersState extends State<CameraParameters> {
     }
   }
 
-  Future<void> sendName(Socket socket, String name) async {
+  Future<void> _sendName(Socket socket, String name) async {
     final nameBytes = utf8.encode(name);
     final lengthBuffer = ByteData(4)..setInt32(0, nameBytes.length, Endian.big);
     socket.add(lengthBuffer.buffer.asUint8List());
@@ -141,20 +183,20 @@ class _CameraParametersState extends State<CameraParameters> {
     await socket.flush();
   }
 
-  Future<void> sendFramesPerInterval(Socket socket, int frames) async {
+  Future<void> _sendFramesPerInterval(Socket socket, int frames) async {
     final buf = ByteData(4)..setInt32(0, frames, Endian.big);
     socket.add(buf.buffer.asUint8List());
     await socket.flush();
   }
 
-  Future<void> sendFrame(Socket socket, List<int> jpegBytes) async {
+  Future<void> _sendFrame(Socket socket, List<int> jpegBytes) async {
     final sizeBuf = ByteData(4)..setInt32(0, jpegBytes.length, Endian.big);
     socket.add(sizeBuf.buffer.asUint8List());
     socket.add(jpegBytes);
     await socket.flush();
   }
 
-  Future<void> sendEnd(Socket socket) async {
+  Future<void> _sendEnd(Socket socket) async {
     final sizeBuf = ByteData(4)..setInt32(0, -1, Endian.big);
     socket.add(sizeBuf.buffer.asUint8List());
     await socket.flush();
@@ -229,13 +271,14 @@ class _CameraParametersState extends State<CameraParameters> {
 
   Future<void> _stopCamera() async {
     try {
-      await sendEnd(_socket);
+      await _sendEnd(_socket);
       await _socket.close();
 
       if (_controller.value.isStreamingImages) {
         await _controller.stopImageStream();
       }
       await _controller.dispose();
+
       setState(() {
         _isStreaming = false; // update UI
       });
@@ -255,8 +298,6 @@ class _CameraParametersState extends State<CameraParameters> {
       return;
     }
 
-    WakelockPlus.enable();
-
     if (_formKey.currentState!.validate()) {
       CameraDescription? selectedCamera =
           _cameraKey.currentState!._selectedCamera;
@@ -267,22 +308,43 @@ class _CameraParametersState extends State<CameraParameters> {
         return;
       }
 
+      if (_cameraKey.currentState!._cameras.isEmpty) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('No cameras available')));
+        return;
+      }
+
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Processing Data')));
 
+      var status = await Permission.camera.status;
+      if (!status.isGranted) {
+        status = await Permission.camera.request();
+        if (!status.isGranted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Camera permission denied')),
+          );
+          return;
+        }
+      }
+
       try {
+        //await _initCamera(selectedCamera);
+        await _initCameraWithRetry(selectedCamera);
+
         // Connect using the fields from the form
         final ip = _serverIp.text;
         final port = int.parse(_serverPort.text);
         await _connect(ip, port);
 
-        await sendName(_socket, _cameraName.text);
+        await _sendName(_socket, _cameraName.text);
 
         final framesPerInterval = int.parse(_framesPerInterval.text);
-        await sendFramesPerInterval(_socket, framesPerInterval);
+        await _sendFramesPerInterval(_socket, framesPerInterval);
 
-        await _initCamera(selectedCamera);
+        WakelockPlus.enable();
 
         int targetFps = int.parse(_framerate.text); // desired frame rate
         int frameIntervalMs = (1000 ~/ targetFps);
@@ -295,8 +357,8 @@ class _CameraParametersState extends State<CameraParameters> {
             if (now - lastSent < frameIntervalMs) return; // skip this frame
             lastSent = now;
 
-            final jpegBytes = await _convertToJpeg(image);
-            await sendFrame(_socket, jpegBytes);
+            final jpegBytes = _convertToJpeg(image);
+            await _sendFrame(_socket, jpegBytes);
           } catch (e) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Could not send frame.')),
@@ -307,9 +369,11 @@ class _CameraParametersState extends State<CameraParameters> {
         setState(() {
           _isStreaming = true; // update UI
         });
-      } catch (e) {
+      } catch (e, stacktrace) {
+        print(e.toString());
+        print(stacktrace.toString());
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not start streaming.')),
+          SnackBar(content: Text('Could not start streaming: $e')),
         );
 
         setState(() {
@@ -378,7 +442,7 @@ class _CameraParametersState extends State<CameraParameters> {
                 labelText: 'Frames per interval',
               ),
               keyboardType: TextInputType.text,
-              textInputAction: TextInputAction.done,
+              textInputAction: TextInputAction.next,
 
               validator: (value) {
                 if (value == null ||
@@ -402,7 +466,7 @@ class _CameraParametersState extends State<CameraParameters> {
                 labelText: 'Camera server IP address',
               ),
               keyboardType: TextInputType.text,
-              textInputAction: TextInputAction.done,
+              textInputAction: TextInputAction.next,
 
               validator: (value) {
                 if (value == null ||
@@ -425,7 +489,7 @@ class _CameraParametersState extends State<CameraParameters> {
                 labelText: 'Camera server port number',
               ),
               keyboardType: TextInputType.text,
-              textInputAction: TextInputAction.done,
+              textInputAction: TextInputAction.next,
 
               validator: (value) {
                 if (value == null ||
@@ -474,9 +538,21 @@ class _CameraListState extends State<CameraList> {
   CameraDescription? _selectedCamera;
 
   void _getCameras() async {
-    _cameras.clear();
-    _cameras.addAll(await availableCameras());
-    setState(() {});
+    try {
+      final cameras = await availableCameras();
+      setState(() {
+        _cameras.clear();
+        _cameras.addAll(cameras);
+        if (_cameras.isNotEmpty) {
+          _selectedCamera = _cameras.first;
+        }
+      });
+    } catch (e) {
+      print('Error getting cameras: $e');
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error accessing cameras: $e')));
+    }
   }
 
   @override
